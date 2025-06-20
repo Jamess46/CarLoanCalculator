@@ -51,12 +51,15 @@
     .tab-content.active {
       display: block;
     }
+    .table-container {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
     table {
-      width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      overflow-x: auto;
-      display: block;
+      min-width: 600px;
     }
     th, td {
       padding: 6px;
@@ -82,10 +85,37 @@
         font-size: 14px;
       }
     }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #f5f5f5;
+    }
+    body.dark-mode input,
+    body.dark-mode select {
+      background-color: #1e1e1e;
+      color: #f5f5f5;
+      border: 1px solid #444;
+    }
+    body.dark-mode .result,
+    body.dark-mode .tab-button,
+    body.dark-mode table,
+    body.dark-mode th,
+    body.dark-mode td {
+      background-color: #1e1e1e;
+      color: #f5f5f5;
+    }
+    body.dark-mode .tab-button.active {
+      background: #333;
+    }
   </style>
 </head>
 <body>
   <h2>Car Loan Interest Savings Calculator</h2>
+
+  <div style="text-align: right; margin-bottom: 10px;">
+    <button id="lightModeBtn">☀️ Light</button>
+    <button id="darkModeBtn">🌙 Dark</button>
+  </div>
 
   <label>Loan Amount ($):</label>
   <input type="number" id="loanAmount" />
@@ -114,12 +144,12 @@
 
   <div class="tab-content active" id="standardTab">
     <h3>Standard Payment Schedule</h3>
-    <div id="standardSchedule"></div>
+    <div class="table-container"><div id="standardSchedule"></div></div>
   </div>
 
   <div class="tab-content" id="aggressiveTab">
     <h3>Aggressive Payment Schedule</h3>
-    <div id="aggressiveSchedule"></div>
+    <div class="table-container"><div id="aggressiveSchedule"></div></div>
   </div>
 
   <canvas id="balanceChart"></canvas>
@@ -128,6 +158,13 @@
   <script>
     const inputs = document.querySelectorAll('input, select');
     inputs.forEach(input => input.addEventListener('input', calculateAll));
+
+    document.getElementById('lightModeBtn').addEventListener('click', () => {
+      document.body.classList.remove('dark-mode');
+    });
+    document.getElementById('darkModeBtn').addEventListener('click', () => {
+      document.body.classList.add('dark-mode');
+    });
 
     function showTab(id) {
       document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -268,11 +305,11 @@
         Payment Frequency: <strong>${frequency === 'monthly' ? 'Monthly' : 'Bi-Weekly'}</strong><br>
         Regular Payment: ${formatCurrency(payment)}<br>
         Aggressive Payment: ${formatCurrency(payment + extra)}<br>
-        Total Time to Pay (Aggressive): <strong>${totalYearsAggressive} years and ${totalRemMonthsAggressive} months</strong><br>
-        Time Saved: <strong>${savedYears} years and ${savedRemMonths} months</strong><br>
         Total Interest (Standard): ${formatCurrency(standard.totalInterest)}<br>
         Total Interest (Aggressive): ${formatCurrency(aggressive.totalInterest)}<br>
-        Interest Saved: <strong>${formatCurrency(interestSaved)}</strong>
+        Interest Saved: <strong>${formatCurrency(interestSaved)}</strong><br>
+        Total Time to Pay (Aggressive): <strong>${totalYearsAggressive} years and ${totalRemMonthsAggressive} months</strong><br>
+        Time Saved: <strong>${savedYears} years and ${savedRemMonths} months</strong>
       `;
 
       renderSchedule("standardSchedule", standard.schedule);
