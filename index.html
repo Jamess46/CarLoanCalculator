@@ -304,9 +304,9 @@
         <strong>Summary:</strong><br>
         Payment Frequency: <strong>${frequency === 'monthly' ? 'Monthly' : 'Bi-Weekly'}</strong><br>
         Regular Payment: ${formatCurrency(payment)}<br>
-        Aggressive Payment: ${formatCurrency(payment + extra)}<br>
+        Aggressive Payment: ${formatCurrency(payment + extra)}<br><br>
         Total Time to Pay (Aggressive): <strong>${totalYearsAggressive} years and ${totalRemMonthsAggressive} months</strong><br>
-        Time Saved: <strong>${savedYears} years and ${savedRemMonths} months</strong><br>
+        Time Saved: <strong>${savedYears} years and ${savedRemMonths} months</strong><br><br>
         Total Interest (Standard): ${formatCurrency(standard.totalInterest)}<br>
         Total Interest (Aggressive): ${formatCurrency(aggressive.totalInterest)}<br>
         Interest Saved: <strong>${formatCurrency(interestSaved)}</strong>
