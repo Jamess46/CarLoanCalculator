@@ -3,18 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>Car Loan Interest Savings Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
-      max-width: 1000px;
       margin: auto;
+      max-width: 1000px;
     }
     input, select {
-      padding: 8px;
-      margin: 5px 0;
+      padding: 10px;
+      margin: 10px 0;
       width: 100%;
+      box-sizing: border-box;
     }
     .result {
       margin-top: 20px;
@@ -23,14 +26,19 @@
       border-radius: 5px;
     }
     .tabs {
+      display: flex;
+      flex-wrap: wrap;
       margin-top: 20px;
     }
     .tab-button {
+      flex: 1 1 auto;
       padding: 10px;
       margin-right: 5px;
       border: 1px solid #ccc;
       cursor: pointer;
       background: #f0f0f0;
+      min-width: 120px;
+      text-align: center;
     }
     .tab-button.active {
       background: #ddd;
@@ -47,6 +55,8 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
+      overflow-x: auto;
+      display: block;
     }
     th, td {
       padding: 6px;
@@ -58,7 +68,19 @@
     }
     canvas {
       max-width: 100%;
+      height: auto;
       margin-top: 20px;
+    }
+    @media (max-width: 600px) {
+      .tabs {
+        flex-direction: column;
+      }
+      .tab-button {
+        margin-bottom: 5px;
+      }
+      table, th, td {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -237,13 +259,19 @@
       const savedYears = Math.floor(monthsSaved / 12);
       const savedRemMonths = Math.round(monthsSaved % 12);
 
+      const totalAggressiveTimeMonths = (aggressive.schedule.length / paymentsPerYear) * 12;
+      const totalYearsAggressive = Math.floor(totalAggressiveTimeMonths / 12);
+      const totalRemMonthsAggressive = Math.round(totalAggressiveTimeMonths % 12);
+
       document.getElementById("result").innerHTML = `
         <strong>Summary:</strong><br>
         Payment Frequency: <strong>${frequency === 'monthly' ? 'Monthly' : 'Bi-Weekly'}</strong><br>
         Regular Payment: ${formatCurrency(payment)}<br>
+        Aggressive Payment: ${formatCurrency(payment + extra)}<br>
         Total Interest (Standard): ${formatCurrency(standard.totalInterest)}<br>
         Total Interest (Aggressive): ${formatCurrency(aggressive.totalInterest)}<br>
         Interest Saved: <strong>${formatCurrency(interestSaved)}</strong><br>
+        Total Time to Pay (Aggressive): <strong>${totalYearsAggressive} years and ${totalRemMonthsAggressive} months</strong><br>
         Time Saved: <strong>${savedYears} years and ${savedRemMonths} months</strong>
       `;
 
@@ -252,7 +280,6 @@
       renderCharts(standard, aggressive);
     }
 
-    // Auto-run on load if fields pre-filled
     window.addEventListener('DOMContentLoaded', calculateAll);
   </script>
 </body>
