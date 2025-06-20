@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Car Loan Interest Savings Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+    }
+    .result {
+      margin-top: 20px;
+      background: #f0f8ff;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    .tabs {
+      margin-top: 20px;
+    }
+    .tab-button {
+      padding: 10px;
+      margin-right: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      background: #f0f0f0;
+    }
+    .tab-button.active {
+      background: #ddd;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+      margin-top: 15px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 6px;
+      border: 1px solid #ccc;
+      text-align: right;
+    }
+    th {
+      background: #f9f9f9;
+    }
+    canvas {
+      max-width: 100%;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Car Loan Interest Savings Calculator</h2>
+
+  <label>Loan Amount ($):</label>
+  <input type="number" id="loanAmount" />
+
+  <label>Annual Interest Rate (%):</label>
+  <input type="number" id="interestRate" step="0.01" />
+
+  <label>Loan Term (Months):</label>
+  <input type="number" id="loanTermMonths" />
+
+  <label>Extra Payment Each Period ($):</label>
+  <input type="number" id="extraPayment" />
+
+  <label>Payment Frequency:</label>
+  <select id="paymentFrequency">
+    <option value="monthly">Monthly (12/year)</option>
+    <option value="biweekly">Bi-Weekly (26/year)</option>
+  </select>
+
+  <div class="result" id="result"></div>
+
+  <div class="tabs">
+    <button class="tab-button active" onclick="showTab('standard')">Standard</button>
+    <button class="tab-button" onclick="showTab('aggressive')">Aggressive</button>
+  </div>
+
+  <div class="tab-content active" id="standardTab">
+    <h3>Standard Payment Schedule</h3>
+    <div id="standardSchedule"></div>
+  </div>
+
+  <div class="tab-content" id="aggressiveTab">
+    <h3>Aggressive Payment Schedule</h3>
+    <div id="aggressiveSchedule"></div>
+  </div>
+
+  <canvas id="balanceChart"></canvas>
+  <canvas id="interestChart"></canvas>
+
+  <script>
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(input => input.addEventListener('input', calculateAll));
+
+    function showTab(id) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(id + 'Tab').classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function formatCurrency(num) {
+      return '$' + num.toFixed(2);
+    }
+
+    function calculatePayment(P, annualRate, paymentsPerYear, totalMonths) {
+      const totalPeriods = (totalMonths / 12) * paymentsPerYear;
+      const ratePerPeriod = annualRate / paymentsPerYear;
+      return P * ratePerPeriod / (1 - Math.pow(1 + ratePerPeriod, -totalPeriods));
+    }
+
+    function generateSchedule(P, annualRate, paymentsPerYear, paymentAmount, extra = 0) {
+      const ratePerPeriod = annualRate / paymentsPerYear;
+      let balance = P;
+      let schedule = [];
+      let period = 1;
+      let totalInterest = 0;
+
+      while (balance > 0 && period < 1200) {
+        const interest = balance * ratePerPeriod;
+        let principal = (paymentAmount + extra) - interest;
+        if (principal > balance) principal = balance;
+        balance -= principal;
+        totalInterest += interest;
+
+        schedule.push({
+          period,
+          interest,
+          principal,
+          balance
+        });
+
+        period++;
+      }
+
+      return { schedule, totalInterest };
+    }
+
+    function renderSchedule(containerId, schedule) {
+      let html = `<table><thead>
+        <tr><th>Period</th><th>Interest</th><th>Principal</th><th>Balance</th></tr>
+        </thead><tbody>`;
+      schedule.forEach(row => {
+        html += `<tr>
+          <td>${row.period}</td>
+          <td>${formatCurrency(row.interest)}</td>
+          <td>${formatCurrency(row.principal)}</td>
+          <td>${formatCurrency(row.balance)}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      document.getElementById(containerId).innerHTML = html;
+    }
+
+    let balanceChart, interestChart;
+
+    function renderCharts(standard, aggressive) {
+      const labels = aggressive.schedule.map(p => `P${p.period}`);
+      const stdBal = standard.schedule.map(p => p.balance);
+      const aggBal = aggressive.schedule.map(p => p.balance);
+      const stdInt = standard.schedule.map(p => p.interest);
+      const aggInt = aggressive.schedule.map(p => p.interest);
+
+      if (balanceChart) balanceChart.destroy();
+      if (interestChart) interestChart.destroy();
+
+      balanceChart = new Chart(document.getElementById('balanceChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Standard Balance', data: stdBal, borderColor: '#999', fill: false },
+            { label: 'Aggressive Balance', data: aggBal, borderColor: '#28a745', fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Loan Balance Over Time' }
+          }
+        }
+      });
+
+      interestChart = new Chart(document.getElementById('interestChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Standard Interest', data: stdInt, backgroundColor: 'rgba(100,100,255,0.6)' },
+            { label: 'Aggressive Interest', data: aggInt, backgroundColor: 'rgba(100,200,100,0.6)' }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Interest Paid Per Period' }
+          }
+        }
+      });
+    }
+
+    function calculateAll() {
+      const P = parseFloat(document.getElementById("loanAmount").value) || 0;
+      const annualRate = parseFloat(document.getElementById("interestRate").value) / 100 || 0;
+      const totalMonths = parseFloat(document.getElementById("loanTermMonths").value) || 0;
+      const extra = parseFloat(document.getElementById("extraPayment").value) || 0;
+      const frequency = document.getElementById("paymentFrequency").value;
+      const paymentsPerYear = frequency === 'monthly' ? 12 : 26;
+
+      if (P <= 0 || annualRate <= 0 || totalMonths <= 0) {
+        document.getElementById("result").innerHTML = '';
+        return;
+      }
+
+      const payment = calculatePayment(P, annualRate, paymentsPerYear, totalMonths);
+      const standard = generateSchedule(P, annualRate, paymentsPerYear, payment);
+      const aggressive = generateSchedule(P, annualRate, paymentsPerYear, payment, extra);
+
+      const interestSaved = standard.totalInterest - aggressive.totalInterest;
+      const timeSavedPeriods = standard.schedule.length - aggressive.schedule.length;
+      const monthsSaved = (timeSavedPeriods / paymentsPerYear) * 12;
+      const savedYears = Math.floor(monthsSaved / 12);
+      const savedRemMonths = Math.round(monthsSaved % 12);
+
+      document.getElementById("result").innerHTML = `
+        <strong>Summary:</strong><br>
+        Payment Frequency: <strong>${frequency === 'monthly' ? 'Monthly' : 'Bi-Weekly'}</strong><br>
+        Regular Payment: ${formatCurrency(payment)}<br>
+        Total Interest (Standard): ${formatCurrency(standard.totalInterest)}<br>
+        Total Interest (Aggressive): ${formatCurrency(aggressive.totalInterest)}<br>
+        Interest Saved: <strong>${formatCurrency(interestSaved)}</strong><br>
+        Time Saved: <strong>${savedYears} years and ${savedRemMonths} months</strong>
+      `;
+
+      renderSchedule("standardSchedule", standard.schedule);
+      renderSchedule("aggressiveSchedule", aggressive.schedule);
+      renderCharts(standard, aggressive);
+    }
+
+    // Auto-run on load if fields pre-filled
+    window.addEventListener('DOMContentLoaded', calculateAll);
+  </script>
+</body>
+</html>
